@@ -15,6 +15,7 @@ export interface IUser extends Document {
   refreshToken?: string;
   createdAt: Date;
   updatedAt: Date;
+  isEmailVerified?: boolean;
   isPasswordCorrect(password: string): Promise<boolean>;
 }
 
@@ -52,6 +53,10 @@ const userSchema = new Schema<IUser>({
       type: String,
       select: false, 
     },
+    isEmailVerified: {
+      type: Boolean,
+      default: false,
+    }
   },
   {
     timestamps: true,

@@ -5,12 +5,13 @@ export class ApiResponse<T> {
   data: T;
 
   constructor(
+    success: boolean,
     statusCode: number,
     data: T,
     message = "Success"
   ) {
     this.statusCode = statusCode;
-    this.success = true;
+    this.success = success;
     this.message = message;
     this.data = data;
   }
