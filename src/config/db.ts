@@ -9,14 +9,14 @@ if (!MONGO_URI) {
 const connectDB = async (): Promise<void> => {
   try {
     const conn = await mongoose.connect(MONGO_URI, {
-      autoIndex: false, // ❌ disable in prod (better performance)
+      autoIndex: false, 
       serverSelectionTimeoutMS: 5000,
     });
 
     console.log(`✅ MongoDB Connected: ${conn.connection.host}`);
   } catch (error) {
     console.error("❌ MongoDB connection error:", error);
-    process.exit(1); // 🔥 Crash app if DB not connected
+    process.exit(1); 
   }
 };
 
