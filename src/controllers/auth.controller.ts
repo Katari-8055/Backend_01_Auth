@@ -3,6 +3,7 @@ import User from "../model/user.model";
 import ApiError from "../utils/ApiError";
 import { ApiResponse } from "../utils/ApiResponse";
 import { asyncHandler } from "../utils/AsyncHandler";
+import { sendEmail } from "../services/email.service";
 
 interface SignUpBody {
   email: string;
@@ -43,6 +44,15 @@ export const signUp = asyncHandler(
       isEmailVerified: user.isEmailVerified,
       createdAt: user.createdAt,
     };
+
+    await sendEmail({
+      to: user.email,
+      subject: "Welcome to My App 🎉",
+      html: `
+        <h2>Hello ${user.name}</h2>
+        <p>Your account has been created successfully.</p>
+      `,
+    });
 
     return res.status(201).json(
       new ApiResponse(
