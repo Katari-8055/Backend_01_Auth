@@ -7,7 +7,7 @@ if (!process.env.RESEND_API_KEY) {
 
 const resend = new Resend(process.env.RESEND_API_KEY);
 
-interface SendEmailOptions {
+export interface SendEmailOptions {
   to: string;
   subject: string;
   html: string;
@@ -20,7 +20,7 @@ export const sendEmail = async ({
 }: SendEmailOptions): Promise<void> => {
   try {
     await resend.emails.send({
-      from: "kataricoder@gmail.com",
+      from: "My App <onboarding@resend.dev>",
       to: [to],
       subject,
       html,
