@@ -3,7 +3,9 @@ import User from "../model/user.model";
 import ApiError from "../utils/ApiError";
 import { ApiResponse } from "../utils/ApiResponse";
 import { asyncHandler } from "../utils/AsyncHandler";
-import { emailWrapper } from "../utils/emailWraper";
+import { generateOTP } from "../utils/generateOTP";
+import redis from "../config/redis";
+import { sendEmail } from "../services/email.service";
 
 interface SignUpBody {
   email: string;
@@ -44,23 +46,27 @@ export const signUp = asyncHandler(
       isEmailVerified: user.isEmailVerified,
       createdAt: user.createdAt,
     };
+    const otp = generateOTP();
+    try {
+      await redis.set(`${user._id}`, otp, { ex: 300 });
+      console.log("OTP stored in Redis:", otp);
+      await sendEmail({
+        to: user.email,
+        subject: "Welcome to My App 🎉",
+        html: `
+      <h2>Hello ${user.name}</h2>
+      <h1>Your OTP is: ${otp}</h1>
+      <p>Your account has been created successfully.</p>`,
+      });
+      console.log("Welcome email sent to:", user.email);
+    } catch (err) {
+      console.error("Redis/Email failed:", err);
+    }
 
-    emailWrapper({
-      to: user.email,
-      subject: "Welcome to My App 🎉",
-      html: `
-        <h2>Hello ${user.name}</h2>
-        <p>Your account has been created successfully.</p>
-      `,
-    })
-
-    return res.status(201).json(
-      new ApiResponse(
-        true,
-        201,
-        userResponse,
-        "User registered successfully"
-      )
-    );
+    return res
+      .status(201)
+      .json(
+        new ApiResponse(true, 201, userResponse, "User registered successfully")
+      );
   }
 );
