@@ -4,11 +4,13 @@ import helmet from "helmet";
 import morgan from "morgan";
 import { errorMiddleware } from "./middlewares/error.middleware";
 import router from "./routes/auth.route";
+import cookieParser from "cookie-parser";
 
 
 
 const app = express();
 
+app.use(cookieParser());
 app.use(express.json());
 // app.use(cors());
 app.use(helmet());

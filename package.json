@@ -23,6 +23,7 @@
     "@types/morgan": "^1.9.10",
     "@upstash/redis": "^1.36.1",
     "bcryptjs": "^3.0.3",
+    "cookie-parser": "^1.4.7",
     "cors": "^2.8.5",
     "dotenv": "^17.2.3",
     "express": "^5.2.1",
@@ -33,6 +34,7 @@
     "resend": "^6.7.0"
   },
   "devDependencies": {
+    "@types/cookie-parser": "^1.4.10",
     "@types/express": "^5.0.6",
     "@types/node": "^25.0.5",
     "nodemon": "^3.1.11",

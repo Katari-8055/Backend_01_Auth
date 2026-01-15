@@ -115,20 +115,40 @@ export const signUp = asyncHandler(
 
 
 export const verifyEmail = asyncHandler(async (req: Request, res: Response) => {
-  const { userId, otp } = req.body;
+  const userId = (req as any).user._id;
+  const { otp } = req.body;
+
   if (!userId || !otp) {
-    throw new ApiError(400, "User ID and OTP are required");
+    throw new ApiError(400, "OTP is required");
   }
+  
   const user = await User.findById(userId);
   if (!user) {
     throw new ApiError(404, "User not found");
   }
-  const storedOtp = await redis.get(`${userId}`);
+
+  if (user.isEmailVerified) {
+    throw new ApiError(400, "Email already verified");
+  }
+
+  const redisKey = `otp:${userId}`;
+  const storedOtp = await redis.get(redisKey);
+
+  if (!storedOtp) {
+    throw new ApiError(400, "OTP expired or not found");
+  }
+
+
   if (storedOtp !== otp) {
     throw new ApiError(400, "Invalid OTP");
   }
-  await redis.del(`${userId}`);
+
+  await redis.del(redisKey);
+
   user.isEmailVerified = true;
-  await user.save();
-  return res.status(200).json(new ApiResponse(true, 200, null, "Email verified successfully"));
-})  
+  await user.save({ validateBeforeSave: false });
+
+  return res.status(200).json(
+    new ApiResponse(true, 200, null, "Email verified successfully")
+  );
+});
