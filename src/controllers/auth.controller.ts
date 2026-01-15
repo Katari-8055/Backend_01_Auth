@@ -225,7 +225,6 @@ export const login = asyncHandler(async (req: Request, res: Response) => {
 
 export const accessToken = asyncHandler(async (req: Request, res: Response) => {
   const { refreshToken } = req.cookies;
-  console.log(refreshToken);
 
   if (!refreshToken) {
     throw new ApiError(401, "Refresh token is required");
@@ -244,7 +243,6 @@ export const accessToken = asyncHandler(async (req: Request, res: Response) => {
     throw new ApiError(404, "User not found");
   }
 
-  console.log(user.refreshToken);
 
   // Check if refresh token matches stored one
   if (user.refreshToken !== refreshToken) {

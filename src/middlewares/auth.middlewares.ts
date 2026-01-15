@@ -1,8 +1,9 @@
 import { Request, Response, NextFunction } from "express";
 import jwt from "jsonwebtoken";
-import User from "../model/user.model";
+import User, { UserRole } from "../model/user.model";
 import ApiError from "../utils/ApiError";
 import { asyncHandler } from "../utils/AsyncHandler";
+
 
 interface JwtPayload {
   _id: string;
@@ -35,3 +36,20 @@ export const authMiddleware = asyncHandler(async (req: Request, _res: Response, 
     next();
   }
 );
+
+export const RBACMiddleware = (roles: UserRole[]) => {
+  return async (req: Request, res: Response, next: NextFunction) => {
+
+    const user = (req as any).user;
+
+    if (!user) {
+      throw new ApiError(401, "Unauthorized: User not found");
+    }
+
+    if (!roles.includes(user.role)) {
+      throw new ApiError(403, "Forbidden: Insufficient permissions");
+    }
+
+    next();
+  };
+}
