@@ -6,7 +6,7 @@ import { asyncHandler } from "../utils/AsyncHandler";
 import { generateOTP } from "../utils/generateOTP";
 import redis from "../config/redis";
 import { sendEmail } from "../services/email.service";
-import { generateAccessToken, generateRefreshToken } from "../utils/token";
+import { generateAccessToken, generateRefreshToken, verifyRefreshToken } from "../utils/token";
 
 interface SignUpBody {
   email: string;
@@ -183,7 +183,7 @@ export const login = asyncHandler(async (req: Request, res: Response) => {
   });
 
   user.refreshToken = refreshToken;
-  
+
   await user.save({ validateBeforeSave: false });
 
   const cookieOptions = {
@@ -219,5 +219,66 @@ export const login = asyncHandler(async (req: Request, res: Response) => {
         },
         "User logged in successfully"
       )
+    );
+});
+
+
+export const accessToken = asyncHandler(async (req: Request, res: Response) => {
+  const { refreshToken } = req.cookies;
+  console.log(refreshToken);
+
+  if (!refreshToken) {
+    throw new ApiError(401, "Refresh token is required");
+  }
+
+  // Verify refresh token
+  let payload: any;
+  try {
+    payload = verifyRefreshToken(refreshToken);
+  } catch (err) {
+    throw new ApiError(401, "Invalid refresh token");
+  }
+
+  const user = await User.findById(payload._id).select("+refreshToken");
+  if (!user) {
+    throw new ApiError(404, "User not found");
+  }
+
+  console.log(user.refreshToken);
+
+  // Check if refresh token matches stored one
+  if (user.refreshToken !== refreshToken) {
+    throw new ApiError(401, "Refresh token mismatch");
+  }
+
+  // Generate new access token
+  const newAccessToken = generateAccessToken({
+    _id: user._id,
+    email: user.email,
+    role: user.role,
+  });
+
+  const newRefreshToken = generateRefreshToken({ _id: user._id });
+  user.refreshToken = newRefreshToken;
+  await user.save({ validateBeforeSave: false });
+
+  const cookieOptions = {
+    httpOnly: true,
+    secure: true,
+    sameSite: "strict" as const,
+  };
+
+  return res
+    .status(200)
+    .cookie("accessToken", newAccessToken, {
+      ...cookieOptions,
+      maxAge: 15 * 60 * 1000, // 15 minutes
+    })
+    .cookie("refreshToken", newRefreshToken, {
+      ...cookieOptions,
+      maxAge: 7 * 24 * 60 * 60 * 1000,
+    })
+    .json(
+      new ApiResponse(true, 200, { accessToken: newAccessToken }, "Access token refreshed")
     );
 });
