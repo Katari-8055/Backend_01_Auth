@@ -15,11 +15,11 @@ interface SignUpBody {
   role?: "teacher" | "student";
 }
 
+//--------------------------Sign Up Controller--------------------------//
+
 export const signUp = asyncHandler(
   async (req: Request<{}, {}, SignUpBody>, res: Response) => {
     const { email, password, name, role } = req.body;
-    // console.log(req.body);
-
 
     if (!email || !password || !name) {
       throw new ApiError(400, "Name, email and password are required");
@@ -49,7 +49,6 @@ export const signUp = asyncHandler(
       role: user.role,
     });
     // console.log(accessToken);
-
 
     const refreshToken = generateRefreshToken({
       _id: user._id,
@@ -112,7 +111,7 @@ export const signUp = asyncHandler(
   }
 );
 
-
+//--------------------------Verify Email Controller--------------------------//
 
 export const verifyEmail = asyncHandler(async (req: Request, res: Response) => {
   const userId = (req as any).user._id;
@@ -121,7 +120,7 @@ export const verifyEmail = asyncHandler(async (req: Request, res: Response) => {
   if (!userId || !otp) {
     throw new ApiError(400, "OTP is required");
   }
-  
+
   const user = await User.findById(userId);
   if (!user) {
     throw new ApiError(404, "User not found");
@@ -138,7 +137,6 @@ export const verifyEmail = asyncHandler(async (req: Request, res: Response) => {
     throw new ApiError(400, "OTP expired or not found");
   }
 
-
   if (storedOtp !== otp) {
     throw new ApiError(400, "Invalid OTP");
   }
@@ -148,7 +146,78 @@ export const verifyEmail = asyncHandler(async (req: Request, res: Response) => {
   user.isEmailVerified = true;
   await user.save({ validateBeforeSave: false });
 
-  return res.status(200).json(
-    new ApiResponse(true, 200, null, "Email verified successfully")
-  );
+  return res
+    .status(200)
+    .json(new ApiResponse(true, 200, null, "Email verified successfully"));
+});
+
+//--------------------------Login Controller--------------------------//
+
+export const login = asyncHandler(async (req: Request, res: Response) => {
+  const { email, password } = req.body;
+
+  if (!email || !password) {
+    throw new ApiError(400, "Email and password are required");
+  }
+
+  const user = await User.findOne({ email }).select("+password");
+
+  if (!user) {
+    throw new ApiError(404, "User not found");
+  }
+
+  const isPasswordValid = await user.isPasswordCorrect(password);
+
+  if (!isPasswordValid) {
+    throw new ApiError(401, "Invalid email or password");
+  }
+
+  const accessToken = generateAccessToken({
+    _id: user._id,
+    email: user.email,
+    role: user.role,
+  });
+
+  const refreshToken = generateRefreshToken({
+    _id: user._id,
+  });
+
+  user.refreshToken = refreshToken;
+  
+  await user.save({ validateBeforeSave: false });
+
+  const cookieOptions = {
+    httpOnly: true,
+    secure: true,
+    sameSite: "strict" as const,
+  };
+
+  return res
+    .status(200)
+    .cookie("accessToken", accessToken, {
+      ...cookieOptions,
+      maxAge: 15 * 60 * 1000,
+    })
+    .cookie("refreshToken", refreshToken, {
+      ...cookieOptions,
+      maxAge: 7 * 24 * 60 * 60 * 1000,
+    })
+    .json(
+      new ApiResponse(
+        true,
+        200,
+        {
+          user: {
+            id: user._id,
+            name: user.name,
+            email: user.email,
+            role: user.role,
+            isEmailVerified: user.isEmailVerified,
+          },
+          accessToken,
+          refreshToken,
+        },
+        "User logged in successfully"
+      )
+    );
 });
