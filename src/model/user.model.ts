@@ -1,7 +1,7 @@
 import mongoose, { Schema, Document, Model } from "mongoose";
 import bcrypt from "bcryptjs";
 
-/* =====================
+/* ======================
    1. Role Type (Better typing)
 ===================== */
 export type UserRole = "teacher" | "student";
