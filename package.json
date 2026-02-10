@@ -4,8 +4,10 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "dev": "nodemon src/server.ts"
-  },
+  "dev": "nodemon src/server.ts",
+  "build": "tsc",
+  "start": "node dist/server.js"
+},
   "repository": {
     "type": "git",
     "url": "git+https://github.com/Katari-8055/Backend_01_Auth.git"

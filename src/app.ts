@@ -18,6 +18,10 @@ app.use(morgan("dev"));
 
 // Define your routes here
 
+app.get("/", (req, res) => {
+    res.send("Welcome to the Auth API!");
+})
+
 app.use("/api/v1/auth", router);
 
 // global error handler
